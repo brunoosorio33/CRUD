@@ -76,10 +76,62 @@ async function ejecutarCicloCrud() {
     // el signo delante de _id excluye ese campo
     // Los resultados se guardan en una variable que podemos inspeccionar despues.
     // find devuelve una lista, incluso cuando hay una sola coincidencia.
+
     const urgentesOComplejos = await Ticket.find({
     $or: [{ prioridad: "Crítica" }, { horasInvertidas: { $gt: 4 } }],
     }).select("codigo titulo prioridad horasInvertidas -_id");
     console.log("A) Criticos ó con > 4 horas ($or):", urgentesOComplejos);
+
+
+    // Exists false busca documentos donde la prioridad no existe
+    // No equivale necesariamente a buscar una prioridad guardada con null
+    const sinAgente = await Ticket.find(
+    {
+        agenteAsignado: {$exists: false},
+}).select("codigo titulo prioridad horasInvertidas -_id");
+console.log("Tickets sin agente asignado ($exist: false);", sinAgente);
+
+const etiquetasTickets = await Ticket.find({
+    etiquetas: {$all: ["texto", "ui"]}
+}).select("codigo etiquetas -_id")
+console.log("\n Tickets con las etiquetas de ui y reportes ($all)", etiquetasTickets);
+
+const ticketsTitulo = await Ticket.find({
+    titulo: { $regex: "el", $options: "i" }
+}).select("codigo titulo -_id");
+
+console.log("\n Tickets cuyo título contiene 'el' ($regex):", ticketsTitulo);
+
+// 3. UPDATE (ACTUALIZACION INDIVIDUAL, ATOMICA Y MASIVA)
+// $set remplaza valores concretos.
+// $inc incremento o suma al numero existente
+// $push añade un elemento al final de la array
+
+
+const ticketUpdate = await Ticket.findOneAndUpdate(
+    { codigo: "bug-103" },
+    {
+        $set: { prioridad: "Baja", estado: "Resuelto" },
+        $inc: { horasInvertidas: 1 },
+        $pull: { etiquetas: "backend" }
+    },
+    { returnDocument: "after", runValidators: true }
+);
+
+console.log("Ticket actualizado:", ticketUpdate);
+
+const resultadosMasivo = await Ticket.updateMany(
+    {agenteAsignado: {$exists: false }},
+    {$set: {agenteAsignado: "Guardia Nivel 1"} },
+);
+console.log(`Actualizacion masiva completada: ${resultadosMasivo.modifiedCount} tickets asignados a Guardia Nivel 1.`)
+
+/* const resultadosMasivo = await Ticket.updateMany(
+    { estado: "Abierto" },
+    { $set: { prioridad: "Alta" } },
+);
+console.log(`Actualización masiva completada: ${resultadosMasivo.modifiedCount} tickets actualizados a prioridad Alta.`); */
+
 } catch (error) {
     // Si alguna operacion falla en el try, el flujo salta hacia aqui, el error se informa
     console.error("Error en el lab:", error.message);

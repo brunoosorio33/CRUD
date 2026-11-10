@@ -1,3 +1,4 @@
+// Importamos mongoose para su utilizacion.
 import mongoose, { mongo } from "mongoose";
 
 const ticketSchema = new mongoose.Schema(
@@ -26,7 +27,7 @@ const ticketSchema = new mongoose.Schema(
     required: true,
     enum: {
         values: ["Baja", "Media", "Alta", "Crítica"],
-        message: "{VALUE} no es una priridad valida",
+        message: "{VALUE} no es una prioridad valida",
     },
     default: "Media",
     },
